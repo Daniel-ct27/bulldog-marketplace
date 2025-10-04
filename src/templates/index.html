@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    {% if request.user.is_authenticated%}
+    <p>Hello {{ request.user.username}} | <a href="{% url 'logout'%}">Logout</a></p>
+    {% else %}
+    <a href="{% url 'register'%}">Register</a> | <a href="{% url 'login'%}">Login</a>
+
+    {% endif%}
+
+</head>
+<body>
+    <h1>This is the body</h1>
+    <!-- {% block content%}
+        {% endblock content%} -->
+
+    {% for listing in listings%}
+    <div>
+        <div>
+            <img src={{listing.image}}/>
+        </div>
+        {{listing.title}}
+         ${{listing.price}} 
+         {{listing.color}}
+    </div>
+    <br/>
+
+    {% endfor %}
+    
+</body>
+<footer><h3>This is the footer</h3></footer>
+</html>

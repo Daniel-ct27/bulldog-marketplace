@@ -1,0 +1,263 @@
+import React, { useState , useEffect} from 'react';
+import { Heart, ShoppingCart, Filter, Search, Grid, List ,Plus} from 'lucide-react';
+import axios from "axios"
+import { useNavigate } from 'react-router-dom';
+
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  color: string;
+  image: string;
+}
+
+interface ProductCardProps {
+  product: Product;
+}
+
+const ProductListing: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('name');
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [cart, setCart] = useState<Set<number>>(new Set());
+  const navigate = useNavigate();
+  // Sample product data - you can replace with props or API data
+  useEffect(() => {
+    async function fetchProducts() {
+      const res = await axios.get("http://127.0.0.1:8000/listing");
+      setProducts(res.data);
+    }
+
+    fetchProducts();
+    console.log(products[0]);
+  }, []);
+
+  const colors: string[] = ['all', ...new Set(products.map(p => p.color.toLowerCase()))];
+
+  const filteredAndSortedProducts: Product[] = products
+    .filter(product => 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (selectedColor === 'all' || product.color.toLowerCase() === selectedColor)
+    )
+    .sort((a, b) => {
+      switch(sortBy) {
+        case 'price-low': return a.price - b.price;
+        case 'price-high': return b.price - a.price;
+        case 'name': return a.name.localeCompare(b.name);
+        default: return 0;
+      }
+    });
+
+  const toggleFavorite = (productId: number): void => {
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(productId)) {
+      newFavorites.delete(productId);
+    } else {
+      newFavorites.add(productId);
+    }
+    setFavorites(newFavorites);
+  };
+
+  const toggleCart = (productId: number): void => {
+    const newCart = new Set(cart);
+    if (newCart.has(productId)) {
+      newCart.delete(productId);
+    } else {
+      newCart.add(productId);
+    }
+    setCart(newCart);
+  };
+
+  const ProductCard: React.FC<ProductCardProps> = ({ product }) => (
+    <div className="group relative bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-xl rounded-3xl overflow-hidden border border-slate-700/50 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/20 hover:border-blue-400/30">
+      {/* Futuristic glow effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-amber-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      
+      {/* Image Section */}
+      <div className="relative aspect-square overflow-hidden">
+        <img 
+          src={product.image} 
+          alt={product.name}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+            const target = e.target as HTMLImageElement;
+            target.src = `https://via.placeholder.com/400x400/1e293b/64748b?text=${encodeURIComponent(product.name)}`;
+          }}
+        />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent"></div>
+        
+        {/* Favorite button */}
+        <button
+          onClick={() => toggleFavorite(product.id)}
+          className={`absolute top-4 right-4 p-3 rounded-2xl backdrop-blur-sm transition-all duration-300 ${
+            favorites.has(product.id) 
+              ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/25' 
+              : 'bg-slate-900/60 text-slate-300 hover:bg-gradient-to-r hover:from-pink-500 hover:to-rose-500 hover:text-white'
+          }`}
+        >
+          <Heart className={`w-5 h-5 ${favorites.has(product.id) ? 'fill-current' : ''}`} />
+        </button>
+      </div>
+
+      {/* Content Section */}
+      <div className="p-6 relative z-10">
+        <h3 className="font-bold text-xl text-white mb-3 leading-tight tracking-wide">
+          {product.name}
+        </h3>
+        
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <span className="text-3xl font-black bg-gradient-to-r from-blue-400 to-amber-400 bg-clip-text text-transparent">
+              ${product.price}
+            </span>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-400 to-amber-400"></div>
+              <span className="text-slate-300 text-sm font-medium tracking-wider uppercase">
+                {product.color}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Add to Cart Button */}
+        <button
+          onClick={() => toggleCart(product.id)}
+          className={`w-full flex items-center justify-center space-x-3 px-6 py-4 rounded-2xl font-bold text-lg transition-all duration-300 ${
+            cart.has(product.id)
+              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40'
+              : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-amber-500 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02]'
+          }`}
+        >
+          <ShoppingCart className="w-5 h-5" />
+          <span className="tracking-wide">{cart.has(product.id) ? 'ADDED TO CART' : 'ADD TO CART'}</span>
+        </button>
+      </div>
+    </div>
+  );
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleColorChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    setSelectedColor(e.target.value);
+  };
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    setSortBy(e.target.value);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      {/* Animated background elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-600/20 to-transparent rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-amber-500/20 to-transparent rounded-full blur-3xl animate-pulse delay-1000"></div>
+      </div>
+
+      <div className="relative z-10 p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-6xl font-black mb-4 bg-gradient-to-r from-blue-400 via-purple-400 to-amber-400 bg-clip-text text-transparent tracking-tight">
+              BULLDOG MARKETPLACE
+            </h1>
+            <p className="text-xl text-slate-400 font-light tracking-wide">
+              Discover tomorrow's technology today
+            </p>
+            <button
+              onClick={() => navigate('/add')}
+              className="flex items-center space-x-3 px-8 py-5 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white rounded-2xl font-bold text-lg transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105 flex-shrink-0"
+            >
+              <Plus className="w-6 h-6" />
+              <span className="tracking-wide">ADD LISTING</span>
+            </button>
+          </div>
+
+          {/* Controls */}
+          <div className="bg-gradient-to-r from-slate-900/80 via-slate-800/60 to-slate-900/80 backdrop-blur-xl rounded-3xl p-8 mb-12 border border-slate-700/50">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-6 lg:space-y-0 lg:space-x-8">
+              {/* Search */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className="w-full pl-12 pr-6 py-4 bg-slate-800/50 border border-slate-600/50 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium tracking-wide"
+                />
+              </div>
+
+              <div className="flex items-center space-x-4">
+                {/* Color Filter */}
+                <select
+                  value={selectedColor}
+                  onChange={handleColorChange}
+                  className="px-6 py-4 bg-slate-800/50 border border-slate-600/50 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium tracking-wide"
+                >
+                  {colors.map(color => (
+                    <option key={color} value={color} className="bg-slate-800">
+                      {color === 'all' ? 'All Colors' : color.charAt(0).toUpperCase() + color.slice(1)}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Sort */}
+                <select
+                  value={sortBy}
+                  onChange={handleSortChange}
+                  className="px-6 py-4 bg-slate-800/50 border border-slate-600/50 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium tracking-wide"
+                >
+                  <option value="name" className="bg-slate-800">Sort by Name</option>
+                  <option value="price-low" className="bg-slate-800">Price: Low to High</option>
+                  <option value="price-high" className="bg-slate-800">Price: High to Low</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="flex items-center justify-between mb-8">
+            <p className="text-slate-400 font-medium tracking-wide">
+              Showing <span className="text-blue-400 font-bold">{filteredAndSortedProducts.length}</span> of <span className="text-amber-400 font-bold">{products.length}</span> products
+            </p>
+            <div className="flex items-center space-x-6 text-slate-400 font-medium">
+              <span className="flex items-center space-x-2">
+                <Heart className="w-4 h-4 text-pink-400" />
+                <span className="text-pink-400 font-bold">{favorites.size}</span>
+                <span>favorites</span>
+              </span>
+              <span className="flex items-center space-x-2">
+                <ShoppingCart className="w-4 h-4 text-blue-400" />
+                <span className="text-blue-400 font-bold">{cart.size}</span>
+                <span>in cart</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Products Grid - Fixed 4 per row, then wrap */}
+          <div className="grid grid-cols-4 gap-8 auto-rows-max">
+            {filteredAndSortedProducts.map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+
+          {/* Empty State */}
+          {filteredAndSortedProducts.length === 0 && (
+            <div className="text-center py-20">
+              <div className="text-8xl mb-6">🔮</div>
+              <h3 className="text-2xl font-bold text-white mb-4">No products found</h3>
+              <p className="text-slate-400 text-lg">Try adjusting your search parameters</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProductListing;
