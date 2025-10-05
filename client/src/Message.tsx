@@ -1,0 +1,280 @@
+import React, { useState } from 'react';
+import { Send, Search, MoreVertical, ArrowLeft, Paperclip, Smile } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+interface Message {
+  id: number;
+  sender: 'user' | 'other';
+  text: string;
+  time: string;
+}
+
+interface Conversation {
+  id: number;
+  name: string;
+  lastMessage: string;
+  time: string;
+  unread: number;
+  avatar: string;
+}
+
+const MessagingPage: React.FC = () => {
+  const [selectedConversation, setSelectedConversation] = useState<number>(1);
+  const [messageInput, setMessageInput] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const navigate = useNavigate();
+
+  const conversations: Conversation[] = [
+    {
+      id: 1,
+      name: "Sarah Johnson",
+      lastMessage: "Thanks for the quick response!",
+      time: "2m ago",
+      unread: 2,
+      avatar: "SJ"
+    },
+    {
+      id: 2,
+      name: "Mike Chen",
+      lastMessage: "Is the product still available?",
+      time: "1h ago",
+      unread: 0,
+      avatar: "MC"
+    },
+    {
+      id: 3,
+      name: "Emma Williams",
+      lastMessage: "Can we schedule a call?",
+      time: "3h ago",
+      unread: 1,
+      avatar: "EW"
+    },
+    {
+      id: 4,
+      name: "David Brown",
+      lastMessage: "Perfect, I'll take it!",
+      time: "Yesterday",
+      unread: 0,
+      avatar: "DB"
+    },
+    {
+      id: 5,
+      name: "Lisa Martinez",
+      lastMessage: "What's your best price?",
+      time: "2 days ago",
+      unread: 0,
+      avatar: "LM"
+    }
+  ];
+
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 1,
+      sender: 'other',
+      text: "Hi! I'm interested in the Quantum Wireless Headphones. Are they still available?",
+      time: "10:30 AM"
+    },
+    {
+      id: 2,
+      sender: 'user',
+      text: "Yes, they're still available! They're in excellent condition.",
+      time: "10:32 AM"
+    },
+    {
+      id: 3,
+      sender: 'other',
+      text: "Great! Can you tell me more about the battery life?",
+      time: "10:33 AM"
+    },
+    {
+      id: 4,
+      sender: 'user',
+      text: "The battery lasts up to 30 hours on a single charge. Perfect for long trips!",
+      time: "10:35 AM"
+    },
+    {
+      id: 5,
+      sender: 'other',
+      text: "Thanks for the quick response!",
+      time: "10:36 AM"
+    }
+  ]);
+
+  const handleSendMessage = (): void => {
+    if (messageInput.trim()) {
+      const newMessage: Message = {
+        id: messages.length + 1,
+        sender: 'user',
+        text: messageInput,
+        time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+      };
+      setMessages([...messages, newMessage]);
+      setMessageInput('');
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === 'Enter') {
+      handleSendMessage();
+    }
+  };
+
+  const filteredConversations = conversations.filter(conv =>
+    conv.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const selectedConv = conversations.find(c => c.id === selectedConversation);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8">
+      {/* Animated background elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-600/20 to-transparent rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-purple-600/20 to-transparent rounded-full blur-3xl animate-pulse delay-1000"></div>
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate("/account")}
+            className="flex items-center space-x-2 px-6 py-3 mb-6 bg-slate-800/50 border border-slate-600/50 rounded-2xl text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50 hover:text-white transition-all duration-300"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="font-medium tracking-wide">Back to Account</span>
+          </button>
+          <h1 className="text-5xl font-black bg-gradient-to-r from-blue-400 via-purple-400 to-amber-400 bg-clip-text text-transparent tracking-tight">
+            MESSAGES
+          </h1>
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-12 gap-6 h-[calc(100vh-240px)]">
+          {/* Conversations List */}
+          <div className="col-span-4 bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-xl rounded-3xl border border-slate-700/50 flex flex-col">
+            {/* Search */}
+            <div className="p-6 border-b border-slate-700/50">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search conversations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Conversation List */}
+            <div className="flex-1 overflow-y-auto">
+              {filteredConversations.map((conv) => (
+                <button
+                  key={conv.id}
+                  onClick={() => setSelectedConversation(conv.id)}
+                  className={`w-full p-5 flex items-center space-x-4 hover:bg-slate-700/30 transition-all duration-200 border-b border-slate-700/30 ${
+                    selectedConversation === conv.id ? 'bg-slate-700/50' : ''
+                  }`}
+                >
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <span className="text-white font-bold text-lg">{conv.avatar}</span>
+                  </div>
+                  <div className="flex-1 text-left overflow-hidden">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="text-white font-bold tracking-wide truncate">{conv.name}</h3>
+                      <span className="text-slate-400 text-sm flex-shrink-0 ml-2">{conv.time}</span>
+                    </div>
+                    <p className="text-slate-400 text-sm truncate">{conv.lastMessage}</p>
+                  </div>
+                  {conv.unread > 0 && (
+                    <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-xs font-bold">{conv.unread}</span>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Chat Area */}
+          <div className="col-span-8 bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-xl rounded-3xl border border-slate-700/50 flex flex-col">
+            {/* Chat Header */}
+            {selectedConv && (
+              <div className="p-6 border-b border-slate-700/50 flex items-center justify-between flex-shrink-0">
+                <div className="flex items-center space-x-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                    <span className="text-white font-bold text-lg">{selectedConv.avatar}</span>
+                  </div>
+                  <div>
+                    <h2 className="text-white text-2xl font-bold tracking-wide">{selectedConv.name}</h2>
+                    <p className="text-emerald-400 text-sm flex items-center">
+                      <span className="w-2 h-2 bg-emerald-400 rounded-full mr-2"></span>
+                      Active now
+                    </p>
+                  </div>
+                </div>
+                <button className="p-3 hover:bg-slate-700/50 rounded-xl transition-colors">
+                  <MoreVertical className="w-6 h-6 text-slate-400" />
+                </button>
+              </div>
+            )}
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className="max-w-lg">
+                    <div
+                      className={`px-6 py-4 rounded-3xl ${
+                        message.sender === 'user'
+                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-br-sm'
+                          : 'bg-slate-800/80 text-white rounded-bl-sm'
+                      }`}
+                    >
+                      <p className="text-base leading-relaxed">{message.text}</p>
+                    </div>
+                    <p className={`text-slate-500 text-xs mt-2 px-2 ${message.sender === 'user' ? 'text-right' : 'text-left'}`}>
+                      {message.time}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Message Input */}
+            <div className="p-6 border-t border-slate-700/50 flex-shrink-0">
+              <div className="flex items-center space-x-4">
+                <button className="p-3 hover:bg-slate-700/50 rounded-xl transition-colors flex-shrink-0">
+                  <Paperclip className="w-6 h-6 text-slate-400" />
+                </button>
+                <input
+                  type="text"
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message..."
+                  className="flex-1 px-6 py-4 bg-slate-800/50 border border-slate-600/50 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium text-base"
+                />
+                <button className="p-3 hover:bg-slate-700/50 rounded-xl transition-colors flex-shrink-0">
+                  <Smile className="w-6 h-6 text-slate-400" />
+                </button>
+                <button
+                  onClick={handleSendMessage}
+                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-2xl text-white font-bold transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-105 flex items-center space-x-2 flex-shrink-0"
+                >
+                  <Send className="w-5 h-5" />
+                  <span className="tracking-wide">SEND</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MessagingPage;

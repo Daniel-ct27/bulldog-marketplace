@@ -1,7 +1,10 @@
 
 // import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,Link } from "react-router-dom";
 import axios from "axios";
+
+
+
 
 
 import { useUser } from "./UserContext";
@@ -56,6 +59,7 @@ const LandingPage: React.FC = () => {
       </div>
 
       <div className="relative z-10 w-full max-w-6xl mx-auto px-8">
+   
         <div className="text-center mb-16">
           {/* Logo/Brand */}
           <div className="flex items-center justify-center mb-8">
@@ -147,9 +151,10 @@ const LandingPage: React.FC = () => {
           <div className="mt-8 text-center">
             <p className="text-slate-400">
               Don't have an account?{' '}
-              <a href="#" className="text-amber-400 font-bold hover:text-amber-300 transition-colors">
-                Sign Up
-              </a>
+           
+              <Link to="/register" className="text-amber-400 font-bold hover:text-amber-300 transition-colors">Sign Up</Link>
+                
+              
             </p>
           </div>
         </div>

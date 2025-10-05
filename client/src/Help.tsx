@@ -1,7 +1,12 @@
 import { Calendar, Clock, Send, HelpCircle, ArrowLeft } from 'lucide-react';
 import {useState} from "react"
+import { useNavigate } from 'react-router-dom';
+
 
 const RequestHelpPage: React.FC = () => {
+  const navigate = useNavigate();
+
+
   const [taskTitle, setTaskTitle] = useState<string>('');
   const [taskDescription, setTaskDescription] = useState<string>('');
   const [taskDate, setTaskDate] = useState<string>('');
@@ -19,8 +24,11 @@ const RequestHelpPage: React.FC = () => {
     console.log('Submitting help request:', requestData);
   };
 
-  const handleBack = (): void => {
+  const handleBack = () => {
     console.log('Going back to account page');
+   
+    navigate("/account");
+
   };
 
   return (

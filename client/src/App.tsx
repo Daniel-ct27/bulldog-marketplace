@@ -6,6 +6,8 @@ import Account from "./Account"
 import Help from "./Help"
 import AddListingPage from "./AddListing"
 import { UserProvider } from "./UserContext";
+import RegistrationPage from "./Register"
+import MessagingPage from "./Message"
 function App() {  
 
 
@@ -18,6 +20,9 @@ function App() {
       <Route path="/account" element={<Account/>}/>
       <Route path="/help" element={<Help/>}/>
       <Route path="/add" element={<AddListingPage/>}/>
+      <Route path="register" element={<RegistrationPage/>}/>
+      <Route path="messages" element={<MessagingPage/>}/>
+
     </Routes>
     </UserProvider>
 

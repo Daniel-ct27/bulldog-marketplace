@@ -1,13 +1,15 @@
-import { ShoppingBag, HelpCircle, User, Settings, LogOut, Zap } from 'lucide-react';
+import { ShoppingBag, HelpCircle, User, Settings, LogOut, Zap, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from "./UserContext"
+import axios from "axios"
+
 
 const AccountPage: React.FC = () => {
     const navigate = useNavigate();
-    const {user} = useUser()
+    const {user,setUser} = useUser()
   const handleNavigation = (page: string): void => {
     console.log(`Navigating to: ${page}`);
-    navigate(page);
+    navigate("/"+page);
     // Add your navigation logic here
   };
 
@@ -36,7 +38,12 @@ const AccountPage: React.FC = () => {
             </div>
 
             <button 
-              onClick={() => handleNavigation('logout')}
+              onClick={async() => {
+                  axios.get("http://127.0.0.1:8000/logout")
+                  setUser(null);
+                  localStorage.removeItem("user"); 
+                  navigate("/")
+              }}
               className="flex items-center space-x-2 px-6 py-3 bg-slate-800/50 border border-slate-600/50 rounded-2xl text-slate-300 hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all duration-300"
             >
               <LogOut className="w-5 h-5" />
@@ -63,10 +70,10 @@ const AccountPage: React.FC = () => {
           </div>
 
           {/* Main Actions Grid */}
-          <div className="grid grid-cols-2 gap-8 mb-12">
+          <div className="grid grid-cols-3 gap-8 mb-12">
             {/* Browse Products */}
             <button
-              onClick={() => handleNavigation('/listing')}
+              onClick={() => handleNavigation('listing')}
               className="group bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-xl rounded-3xl p-12 border border-slate-700/50 hover:border-blue-400/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/20 text-left"
             >
               <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-blue-500 rounded-3xl flex items-center justify-center mb-6 shadow-lg shadow-blue-500/25 group-hover:scale-110 transition-transform duration-300">
@@ -86,7 +93,7 @@ const AccountPage: React.FC = () => {
 
             {/* Request Help */}
             <button
-              onClick={() => handleNavigation('/help')}
+              onClick={() => handleNavigation('help')}
               className="group bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-xl rounded-3xl p-12 border border-slate-700/50 hover:border-amber-400/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/20 text-left"
             >
               <div className="w-20 h-20 bg-gradient-to-r from-amber-600 to-amber-500 rounded-3xl flex items-center justify-center mb-6 shadow-lg shadow-amber-500/25 group-hover:scale-110 transition-transform duration-300">
@@ -103,7 +110,28 @@ const AccountPage: React.FC = () => {
                 <span className="group-hover:translate-x-2 transition-transform duration-300">→</span>
               </div>
             </button>
+
+            {/* Messages */}
+            <button
+              onClick={() => handleNavigation('messages')}
+              className="group bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-xl rounded-3xl p-12 border border-slate-700/50 hover:border-purple-400/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/20 text-left"
+            >
+              <div className="w-20 h-20 bg-gradient-to-r from-purple-600 to-purple-500 rounded-3xl flex items-center justify-center mb-6 shadow-lg shadow-purple-500/25 group-hover:scale-110 transition-transform duration-300">
+                <MessageSquare className="w-10 h-10 text-white" />
+              </div>
+              <h3 className="text-4xl font-black text-white mb-4 tracking-wide group-hover:text-purple-400 transition-colors">
+                Messages
+              </h3>
+              <p className="text-slate-400 text-xl leading-relaxed">
+                Chat with buyers and sellers, manage your conversations in real-time
+              </p>
+              <div className="mt-6 flex items-center space-x-2 text-purple-400 font-bold">
+                <span>View Messages</span>
+                <span className="group-hover:translate-x-2 transition-transform duration-300">→</span>
+              </div>
+            </button>
           </div>
+          
 
           {/* Quick Stats */}
           <div className="grid grid-cols-4 gap-6 mb-12">

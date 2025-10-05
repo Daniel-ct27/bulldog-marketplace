@@ -7,6 +7,8 @@ from .models import Listing,Account,HelpRequest
 from django.forms.models import model_to_dict
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
+
 # Create your views here.
 @api_view(['POST'])
 def home(request):
@@ -24,45 +26,53 @@ def home(request):
 
     
     
-
+@api_view(['POST'])
 def register(request):
-    context ={}
-    if request.POST:
-        form = RegistrationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            email= form.cleaned_data.get("email")
-            password1 = form.cleaned_data.get("password1")
-            account = authenticate(email=email,password=password1)
-            login(request,account)
-            return redirect("home")
-        else:
-            context["registration_form"] = form
-    else:
-        form = RegistrationForm()
-        context["registration_form"] = form
-    return render(request,'register.html',context )
+    email = request.data.get("email", "")
+    username = request.data.get("username","")
+    name = request.data.get("name","")
+    password = request.data.get("password1","")
 
-def login_view(request):
-    form = MyLoginForm(request.POST)
-    if form.is_valid():
-        username = form.cleaned_data.get("username")
-        password = form.cleaned_data.get("password")
-        user = authenticate(username=username,password=password)
-        if user is not None:
-            print("User is valid",user)
-            login(request,user)
-            return render(request,"second.html",{})
-        else:
-            print("wrong username or password")
-    else:
-        print(form.errors)
-    return render(request,'login.html',{"form":form})
+  
+
+    if Account.objects.filter(username=username).exists():
+        return Response({"error": "Username already taken"}, status=400)
+
+    user = Account.objects.create_user(username=username, email=email, password=password, name=name)
+    user.save()
+
+    authenticate(email=email,password=password)
+
+    return Response({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "name":name
+    }, status=201)
+    # context ={}
+    # if request.POST:
+    #     form = RegistrationForm(request.POST)
+    #     if form.is_valid():
+    #         form.save()
+    #         email= form.cleaned_data.get("email")
+    #         password1 = form.cleaned_data.get("password1")
+    #         account = authenticate(email=email,password=password1)
+    #         login(request,account)
+    #         return redirect("home")
+    #     else:
+    #         context["registration_form"] = form
+    # else:
+    #     form = RegistrationForm()
+    #     context["registration_form"] = form
+    # return render(request,'register.html',context )
 
 
+
+@api_view(['GET'])
 def logout_view(request):
     logout(request)
-    return redirect("home")
+    return Response({},status=200)
+    
 
 @api_view(['GET'])
 def listing_view(request):
