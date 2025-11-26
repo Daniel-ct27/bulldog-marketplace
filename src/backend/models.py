@@ -54,7 +54,7 @@ class Account(AbstractBaseUser):
     is_superuser        = models.BooleanField(default=False)
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["username"]
+    REQUIRED_FIELDS = ["username","name"]
 
     objects = MyAccountManager()
 
@@ -109,6 +109,33 @@ class Listing(models.Model):
     def __str__(self):
         return self.title
 
+
+    @classmethod
+    def create_listing(cls, data):
+        
+        from backend.models import Account, Category
+        # Get the user object by email
+        user = Account.objects.get(email=data.get('userEmail'))
+        
+        # Get the category object by name (string from React)
+        category_name = data.get('productCategory',"")
+        try:
+            category = Category.objects.get(name=category_name)
+        except:
+            
+            category = Category.objects.get(name="Appliances")
+        
+        # Create listing
+        listing = {"title":data.get('productName', 'Product'),
+            "description":data.get('productDescription', 'None'),
+            "price":int(data.get('productPrice', 0)),
+            "color":data.get('productColor', 'Black'),
+            "image":data.get('productImage', 'example'),
+            "user":user,
+            "category":category}
+        print("hello4")
+        return cls.objects.create(**listing)
+       
     class Meta:
         db_table = "listings"
 

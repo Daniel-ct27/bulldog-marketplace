@@ -83,4 +83,15 @@ def listing_view(request):
         return Response(products,status=200)
     except:
         return Response([],status=500)
+
+
+@api_view(['POST'])
+def add_listing_view(request):
+    # Create and save the listing
+    try:
+        listing = Listing.create_listing(request.data) 
+        return Response([],status=200)
+    except Exception as e:
+        print(e)
+        return Response([],status=400)
     

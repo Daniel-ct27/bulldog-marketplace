@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Upload, DollarSign, Package, ArrowLeft, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from "./UserContext"
+import axios from "axios";
 
 const AddListingPage: React.FC = () => {
   const navigate = useNavigate();
+  const {user,setUser} = useUser();
+
   const [productName, setProductName] = useState<string>('');
   const [productPrice, setProductPrice] = useState<string>('');
   const [productColor, setProductColor] = useState<string>('');
@@ -11,8 +15,10 @@ const AddListingPage: React.FC = () => {
   const [productDescription, setProductDescription] = useState<string>('');
   const [productCategory, setProductCategory] = useState<string>('');
   const [productCondition, setProductCondition] = useState<string>('');
+ 
 
-  const handleSubmit = (): void => {
+  const handleSubmit = async() => {
+    
     const listingData = {
       productName,
       productPrice,
@@ -20,9 +26,21 @@ const AddListingPage: React.FC = () => {
       productImage,
       productDescription,
       productCategory,
-      productCondition
+      productCondition,
+      userEmail: user?.email
     };
     console.log('Submitting listing:', listingData);
+    try{
+      const res = await axios.post("http://127.0.0.1:8000/add_listing",listingData);
+      navigate("/account");
+    }
+    catch(error:any){
+      if (error.response?.status === 400) {
+        navigate("/account");
+        console.log("FAILED")
+         // go directly to landing page if the backend sends a 404
+      }
+    }
   };
 
   const handleBack = (): void => {
