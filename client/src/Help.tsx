@@ -1,27 +1,32 @@
-import { Calendar, Clock, Send, HelpCircle, ArrowLeft } from 'lucide-react';
+import { Send, HelpCircle, ArrowLeft } from 'lucide-react';
 import {useState} from "react"
 import { useNavigate } from 'react-router-dom';
+import { useUser } from "./UserContext";
+import axios from "axios";
 
 
 const RequestHelpPage: React.FC = () => {
   const navigate = useNavigate();
-
+  const {user,setUser}= useUser();
 
   const [taskTitle, setTaskTitle] = useState<string>('');
   const [taskDescription, setTaskDescription] = useState<string>('');
-  const [taskDate, setTaskDate] = useState<string>('');
-  const [taskTime, setTaskTime] = useState<string>('');
   const [category, setCategory] = useState<string>('');
 
-  const handleSubmit = (): void => {
+  const handleSubmit = async()=> {
     const requestData = {
       taskTitle,
       taskDescription,
-      taskDate,
-      taskTime,
-      category
+      category,
+      userEmail: user?.email,
     };
     console.log('Submitting help request:', requestData);
+    try{
+      const res = await axios.post("http://127.0.0.1:8000/add_help_request",requestData);
+      navigate("/account");
+    }
+    catch(error:any){}
+    navigate("/account");
   };
 
   const handleBack = () => {
@@ -101,34 +106,7 @@ const RequestHelpPage: React.FC = () => {
                   <option value="other" className="bg-slate-800">Other</option>
                 </select>
               </div>
-
-              {/* Date and Time */}
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-slate-300 text-sm font-bold mb-3 tracking-wider uppercase">
-                    <Calendar className="inline w-4 h-4 mr-2" />
-                    Date Needed
-                  </label>
-                  <input
-                    type="date"
-                    value={taskDate}
-                    onChange={(e) => setTaskDate(e.target.value)}
-                    className="w-full px-6 py-4 bg-slate-800/50 border border-slate-600/50 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent font-medium tracking-wide text-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 text-sm font-bold mb-3 tracking-wider uppercase">
-                    <Clock className="inline w-4 h-4 mr-2" />
-                    Time Needed
-                  </label>
-                  <input
-                    type="time"
-                    value={taskTime}
-                    onChange={(e) => setTaskTime(e.target.value)}
-                    className="w-full px-6 py-4 bg-slate-800/50 border border-slate-600/50 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent font-medium tracking-wide text-lg"
-                  />
-                </div>
-              </div>
+              
 
               {/* Task Description */}
               <div>

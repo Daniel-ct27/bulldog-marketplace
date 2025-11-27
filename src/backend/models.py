@@ -145,7 +145,6 @@ class HelpRequest(models.Model):
     title = models.CharField(max_length=30, unique=True)
     description = models.TextField(max_length=200)
     subject_area = models.CharField(max_length=30, unique=True)
-    request_type = models.CharField(max_length= 30)
     request_status = models.BooleanField(default=False)
 
 
@@ -155,9 +154,90 @@ class HelpRequest(models.Model):
     def __str__(self):
         return self.title
 
+    @classmethod
+    def create_help_request(cls, data):
+        #user sends email, title, description and subject_area
+        from backend.models import Account
+        # Get the user object by email
+        user = Account.objects.get(email=data.get('userEmail'))
+        
+        # Create help request from data
+        request = {"title":data.get('taskTitle', 'Product'),
+            "description":data.get('taskDescription', 'None'),
+            "subject_area":data.get('category', "None"),
+            "user":user
+            }
+        return cls.objects.create(**request)
+
     class Meta:
         db_table = "help_requests"
 
 
+
+class Conversation(models.Model):
+
+    __tablename__ = "conversation"
+
+    user_one = models.ForeignKey(
+        Account,
+        related_name="conversation_user_one",
+        on_delete=models.CASCADE
+    )
+    user_two = models.ForeignKey(
+        Account,
+        related_name="conversation_user_two",
+        on_delete=models.CASCADE
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "conversations"
+        verbose_name = "Conversation"
+        verbose_name_plural = "Conversations"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user_one", "user_two"],
+                name="unique_user_pair"
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        # reorder IDs so (8,3) becomes (3,8)
+        if self.user_one_id > self.user_two_id:
+            self.user_one, self.user_two = self.user_two, self.user_one
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user_one} ↔ {self.user_two}"
+
+
+class Message(models.Model):
+
+    __tablename__ = "messages"
+
+    conversation = models.ForeignKey(
+        Conversation,
+        related_name="messages",
+        on_delete=models.CASCADE
+    )
+
+    sender = models.ForeignKey(
+        Account,
+        related_name="sent_messages",
+        on_delete=models.CASCADE
+    )
+
+    content = models.TextField(max_length=1000)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Message from {self.sender} at {self.sent_at}"
+
+    class Meta:
+        db_table = "messages"
+        verbose_name = "Message"
+        verbose_name_plural = "Messages"
 
 

@@ -95,3 +95,14 @@ def add_listing_view(request):
         print(e)
         return Response([],status=400)
     
+@api_view(['POST'])
+def add_help_view(request):
+    print(request.data)
+
+    # Create and save the help request
+    try:
+        help_request = HelpRequest.create_help_request(request.data) 
+        return Response([],status=200)
+    except Exception as e:
+        print(e)
+        return Response([],status=400)

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from backend.models import Account,Category,Listing,HelpRequest
+from backend.models import Account,Category,Listing,HelpRequest,Conversation,Message
 from django.contrib.auth.admin import UserAdmin
 
 # Register your models here.
@@ -20,3 +20,5 @@ admin.site.register(Account,AccountAdmin)
 admin.site.register(Category)
 admin.site.register(Listing)
 admin.site.register(HelpRequest)
+admin.site.register(Conversation)
+admin.site.register(Message)
