@@ -27,21 +27,51 @@ const ProductListing: React.FC = () => {
   const [cart, setCart] = useState<Set<number>>(new Set());
   const navigate = useNavigate();
   // Sample product data - you can replace with props or API data
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
+
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim());
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    let cancelled = false;
     async function fetchProducts() {
-      const res = await axios.get("http://127.0.0.1:8000/listing");
-      setProducts(res.data);
+      setIsLoading(true);
+      try {
+        const endpoint = debouncedSearch
+          ? `http://127.0.0.1:8000/search?q=${encodeURIComponent(debouncedSearch)}&k=8`
+          : "http://127.0.0.1:8000/listing";
+        const res = await axios.get(endpoint);
+        if (!cancelled) {
+          setProducts(res.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch products", error);
+        if (!cancelled) {
+          setProducts([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
     }
 
     fetchProducts();
-    console.log(products[0]);
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch]);
 
   const colors: string[] = ['all', ...new Set(products.map(p => p.color.toLowerCase()))];
 
   const filteredAndSortedProducts: Product[] = products
     .filter(product => 
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
       (selectedColor === 'all' || product.color.toLowerCase() === selectedColor)
     )
     .sort((a, b) => {
@@ -277,19 +307,29 @@ const ProductListing: React.FC = () => {
         </div>
 
         {/* Products Grid - Responsive */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 auto-rows-max w-full">
-          {filteredAndSortedProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filteredAndSortedProducts.length === 0 && (
+        {isLoading ? (
           <div className="text-center py-20 w-full">
-            <div className="text-8xl mb-6">🔮</div>
-            <h3 className="text-2xl font-bold text-white mb-4">No products found</h3>
-            <p className="text-slate-400 text-lg">Try adjusting your search parameters</p>
+            <div className="text-6xl mb-4 animate-pulse">🔍</div>
+            <h3 className="text-2xl font-bold text-white mb-2">Searching listings…</h3>
+            <p className="text-slate-400">Give us a second to find the best matches.</p>
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 auto-rows-max w-full">
+              {filteredAndSortedProducts.map(product => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+
+            {/* Empty State */}
+            {filteredAndSortedProducts.length === 0 && (
+              <div className="text-center py-20 w-full">
+                <div className="text-8xl mb-6">🔮</div>
+                <h3 className="text-2xl font-bold text-white mb-4">No products found</h3>
+                <p className="text-slate-400 text-lg">Try adjusting your search parameters</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
