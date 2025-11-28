@@ -7,6 +7,9 @@ from .models import Listing,Account,HelpRequest
 from django.forms.models import model_to_dict
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import status
+
+from . import search
 
 
 # Create your views here.
@@ -83,6 +86,62 @@ def listing_view(request):
         return Response(products,status=200)
     except:
         return Response([],status=500)
+
+
+@api_view(['GET'])
+def semantic_search(request):
+    query = request.query_params.get("q", "").strip()
+    if not query:
+        return Response([], status=200)
+
+    if not search.is_ready():
+        return Response(
+            {"error": "Semantic index not loaded"},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    query_vec = search.model.encode(
+        [query],
+        convert_to_numpy=True,
+        normalize_embeddings=True,
+    ).astype("float32")
+
+    k = int(request.query_params.get("k", 8))
+    k = max(1, min(k, len(search.product_ids)))
+    min_score = float(request.query_params.get("min_score", 0.35))
+
+    scores, neighbors = search.index.search(query_vec, k)
+    ranked_ids = []
+    for score, idx in zip(scores[0], neighbors[0]):
+        if idx == -1:
+            continue
+        if score < min_score:
+            continue
+        ranked_ids.append((int(search.product_ids[idx]), float(score)))
+
+    if not ranked_ids:
+        return Response([], status=200)
+
+    id_order = [item[0] for item in ranked_ids]
+
+    listings = Listing.objects.filter(id__in=id_order)
+    listing_map = {listing.id: listing for listing in listings}
+    products = []
+    for listing_id, score in ranked_ids:
+        listing = listing_map.get(listing_id)
+        if not listing:
+            continue
+        products.append(
+            {
+                "id": listing.id,
+                "name": listing.title,
+                "price": listing.price,
+                "color": listing.color,
+                "image": listing.image,
+                "score": score,
+            }
+        )
+    return Response(products, status=200)
 
 
 @api_view(['POST'])
