@@ -24,6 +24,8 @@ from backend.views import (
     add_listing_view,
     add_help_view,
     semantic_search,
+    get_user,
+    get_users,
 )
 
 urlpatterns = [
@@ -35,5 +37,7 @@ urlpatterns = [
     path("add_listing",add_listing_view,name="add_listing"),
     path("add_help_request",add_help_view,name="add_help_request"),
     path("search", semantic_search, name="semantic_search"),
+    path("get_user", get_user, name="get_user"),
+    path("get_users", get_users, name="get_users"),
  
 ]

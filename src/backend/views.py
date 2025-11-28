@@ -88,6 +88,22 @@ def listing_view(request):
         return Response([],status=500)
 
 
+
+@api_view(['GET'])
+def get_user(request):
+    """Return the currently authenticated user's basic info.
+
+    If no user is authenticated, returns an empty object.
+    """
+    try:
+        if hasattr(request, 'user') and getattr(request.user, 'is_authenticated', False):
+            data = model_to_dict(request.user, fields=['id', 'username', 'name', 'email'])
+            return Response(data, status=200)
+        return Response({}, status=200)
+    except Exception as e:
+        print('get_user error:', e)
+        return Response({}, status=500)
+
 @api_view(['GET'])
 def semantic_search(request):
     query = request.query_params.get("q", "").strip()
@@ -154,6 +170,7 @@ def add_listing_view(request):
         print(e)
         return Response([],status=400)
     
+
 @api_view(['POST'])
 def add_help_view(request):
     print(request.data)
@@ -165,3 +182,19 @@ def add_help_view(request):
     except Exception as e:
         print(e)
         return Response([],status=400)
+    
+
+@api_view(['GET'])
+def get_users(request):
+    try:
+        users = Account.objects.all()
+        # exclude the current user if request is authenticated
+        if hasattr(request, 'user') and getattr(request.user, 'is_authenticated', False):
+            users = users.exclude(id=request.user.id)
+
+        user_list = [{"id": user.id, "username": user.username, "email": user.email, "name": user.name} for user in users]
+        return Response(user_list, status=200)
+    except Exception as e:
+        print('get_users error:', e)
+        return Response([], status=500)
+   
