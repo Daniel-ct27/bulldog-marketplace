@@ -8,6 +8,7 @@ import AddListingPage from "./AddListing"
 import { UserProvider } from "./UserContext";
 import RegistrationPage from "./Register"
 import MessagingPage from "./Message"
+import CheckoutPage from "./Checkout"
 function App() {  
 
 
@@ -22,6 +23,7 @@ function App() {
       <Route path="/add" element={<AddListingPage/>}/>
       <Route path="register" element={<RegistrationPage/>}/>
       <Route path="messages" element={<MessagingPage/>}/>
+      <Route path="checkout" element={<CheckoutPage/>}/>
 
     </Routes>
     </UserProvider>

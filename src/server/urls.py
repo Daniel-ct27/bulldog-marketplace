@@ -26,6 +26,9 @@ from backend.views import (
     semantic_search,
     get_user,
     get_users,
+    get_or_create_conversation,
+    conversation_messages,
+    send_message,
 )
 
 urlpatterns = [
@@ -39,5 +42,8 @@ urlpatterns = [
     path("search", semantic_search, name="semantic_search"),
     path("get_user", get_user, name="get_user"),
     path("get_users", get_users, name="get_users"),
+    path("conversations", get_or_create_conversation, name="get_or_create_conversation"),
+    path("conversations/<int:conv_id>/messages", conversation_messages, name="conversation_messages"),
+    path("messages", send_message, name="send_message"),
  
 ]
