@@ -1,5 +1,7 @@
 from email.policy import default
-from nt import stat_result
+# from nt import stat_result
+from os import stat_result
+
 from ssl import create_default_context
 from django.db import models
 

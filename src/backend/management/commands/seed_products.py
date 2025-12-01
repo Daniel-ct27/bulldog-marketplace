@@ -148,6 +148,61 @@ class Command(BaseCommand):
                 "image": "https://images.unsplash.com/photo-1485965120184-e220f721d03e",
                 "category": "Sports & Outdoors",
             },
+            {
+                "title": "CosmosGlow LED Strip Lights",
+                "description": (
+                    "5 meter RGBIC LED strip with app control, music sync, and scenes "
+                    "for desk setups and bedroom ambience."
+                ),
+                "price": 39.99,
+                "color": "Multi",
+                "image": "https://images.unsplash.com/photo-1519710164239-da123dc03ef4",
+                "category": "Home & Decor",
+            },
+            {
+                "title": "Vertex Pro 15\" Laptop Stand",
+                "description": (
+                    "Aluminum adjustable laptop stand with cable management and "
+                    "ergonomic viewing angles for long study sessions."
+                ),
+                "price": 45.0,
+                "color": "Silver",
+                "image": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8",
+                "category": "Electronics",
+            },
+            {
+                "title": "Campus Essentials Backpack",
+                "description": (
+                    "Water-resistant backpack with padded laptop sleeve, organizer "
+                    "pockets, and side bottle holder. Great for daily campus life."
+                ),
+                "price": 69.5,
+                "color": "Charcoal",
+                "image": "https://images.unsplash.com/photo-1504274066651-8d31a536b11a",
+                "category": "Apparel",
+            },
+            {
+                "title": "Midnight Focus Study Lamp",
+                "description": (
+                    "Warm-white focused desk lamp designed to reduce eye strain during "
+                    "late-night reading and coding sessions."
+                ),
+                "price": 52.0,
+                "color": "Matte Black",
+                "image": "https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d",
+                "category": "Home & Decor",
+            },
+            {
+                "title": "Intro to Machine Learning Textbook",
+                "description": (
+                    "Gently used textbook covering core ML algorithms, model evaluation, "
+                    "and hands-on Python examples."
+                ),
+                "price": 55.0,
+                "color": "N/A",
+                "image": "https://images.unsplash.com/photo-1512820790803-83ca734da794",
+                "category": "Books & Media",
+            },
         ]
 
         created = 0
