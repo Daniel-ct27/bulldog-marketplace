@@ -103,7 +103,8 @@ const MessagingPage: React.FC = () => {
 
   const selectedConv = conversations.find(c => c.id === selectedConversation);
 
-  const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '';
+  // default to /api so dev proxy and server endpoints (namespaced under /api) are used
+  const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
   React.useEffect(() => {
     const load = async () => {
