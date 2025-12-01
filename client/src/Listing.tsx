@@ -2,9 +2,8 @@ import React, { useState , useEffect} from 'react';
 import { Heart, ShoppingCart, Search,Plus,LogOut} from 'lucide-react';
 import axios from "axios"
 import { useNavigate } from 'react-router-dom';
-import { useUser
-
- } from './UserContext';
+import { useUser } from './UserContext';
+import { useCart } from './CartContext';
 interface Product {
   id: number;
   name: string;
@@ -24,7 +23,7 @@ const ProductListing: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
-  const [cart, setCart] = useState<Set<number>>(new Set());
+  const { items: cartItems, addItem, removeItem } = useCart();
   const navigate = useNavigate();
   // Sample product data - you can replace with props or API data
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -93,14 +92,10 @@ const ProductListing: React.FC = () => {
     setFavorites(newFavorites);
   };
 
-  const toggleCart = (productId: number): void => {
-    const newCart = new Set(cart);
-    if (newCart.has(productId)) {
-      newCart.delete(productId);
-    } else {
-      newCart.add(productId);
-    }
-    setCart(newCart);
+  const toggleCart = (product: Product): void => {
+    const exists = cartItems.some(i => i.id === product.id);
+    if (exists) removeItem(product.id);
+    else addItem({ id: product.id, name: product.name, price: product.price, color: product.color, image: product.image }, 1);
   };
 
   const ProductCard: React.FC<ProductCardProps> = ({ product }) => (
@@ -157,15 +152,15 @@ const ProductListing: React.FC = () => {
         
         {/* Add to Cart Button */}
         <button
-          onClick={() => toggleCart(product.id)}
+          onClick={() => toggleCart(product)}
           className={`w-full flex items-center justify-center space-x-3 px-6 py-4 rounded-2xl font-bold text-lg transition-all duration-300 ${
-            cart.has(product.id)
+            cartItems.some(i => i.id === product.id)
               ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40'
               : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-amber-500 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02]'
           }`}
         >
           <ShoppingCart className="w-5 h-5" />
-          <span className="tracking-wide">{cart.has(product.id) ? 'ADDED TO CART' : 'ADD TO CART'}</span>
+          <span className="tracking-wide">{cartItems.some(i => i.id === product.id) ? 'ADDED TO CART' : 'ADD TO CART'}</span>
         </button>
       </div>
     </div>
@@ -292,7 +287,7 @@ const ProductListing: React.FC = () => {
           <p className="text-slate-400 font-medium tracking-wide">
             Showing <span className="text-blue-400 font-bold">{filteredAndSortedProducts.length}</span> of <span className="text-amber-400 font-bold">{products.length}</span> products
           </p>
-          <div className="flex items-center space-x-6 text-slate-400 font-medium">
+              <div className="flex items-center space-x-6 text-slate-400 font-medium">
             <span className="flex items-center space-x-2">
               <Heart className="w-4 h-4 text-pink-400" />
               <span className="text-pink-400 font-bold">{favorites.size}</span>
@@ -300,9 +295,15 @@ const ProductListing: React.FC = () => {
             </span>
             <span className="flex items-center space-x-2">
               <ShoppingCart className="w-4 h-4 text-blue-400" />
-              <span className="text-blue-400 font-bold">{cart.size}</span>
+              <span className="text-blue-400 font-bold">{cartItems.reduce((s,i)=> s + i.quantity, 0)}</span>
               <span>in cart</span>
             </span>
+            <button
+              onClick={() => navigate('/checkout')}
+              className="px-3 py-2 bg-blue-600/60 hover:bg-blue-600 rounded-xl text-white font-medium ml-2"
+            >
+              Go to Checkout
+            </button>
           </div>
         </div>
 

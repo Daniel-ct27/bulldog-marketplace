@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useUser } from './UserContext';
 import { Send, Search, MoreVertical, ArrowLeft, Paperclip, Smile } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,97 +20,72 @@ interface Conversation {
 }
 
 const MessagingPage: React.FC = () => {
-  const [selectedConversation, setSelectedConversation] = useState<number>(1);
+  const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const navigate = useNavigate();
 
-  const conversations: Conversation[] = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      lastMessage: "Thanks for the quick response!",
-      time: "2m ago",
-      unread: 2,
-      avatar: "SJ"
-    },
-    {
-      id: 2,
-      name: "Mike Chen",
-      lastMessage: "Is the product still available?",
-      time: "1h ago",
-      unread: 0,
-      avatar: "MC"
-    },
-    {
-      id: 3,
-      name: "Emma Williams",
-      lastMessage: "Can we schedule a call?",
-      time: "3h ago",
-      unread: 1,
-      avatar: "EW"
-    },
-    {
-      id: 4,
-      name: "David Brown",
-      lastMessage: "Perfect, I'll take it!",
-      time: "Yesterday",
-      unread: 0,
-      avatar: "DB"
-    },
-    {
-      id: 5,
-      name: "Lisa Martinez",
-      lastMessage: "What's your best price?",
-      time: "2 days ago",
-      unread: 0,
-      avatar: "LM"
-    }
-  ];
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loadingConversations, setLoadingConversations] = useState<boolean>(false);
+  const [convError, setConvError] = useState<string | null>(null);
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      sender: 'other',
-      text: "Hi! I'm interested in the Quantum Wireless Headphones. Are they still available?",
-      time: "10:30 AM"
-    },
-    {
-      id: 2,
-      sender: 'user',
-      text: "Yes, they're still available! They're in excellent condition.",
-      time: "10:32 AM"
-    },
-    {
-      id: 3,
-      sender: 'other',
-      text: "Great! Can you tell me more about the battery life?",
-      time: "10:33 AM"
-    },
-    {
-      id: 4,
-      sender: 'user',
-      text: "The battery lasts up to 30 hours on a single charge. Perfect for long trips!",
-      time: "10:35 AM"
-    },
-    {
-      id: 5,
-      sender: 'other',
-      text: "Thanks for the quick response!",
-      time: "10:36 AM"
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
+  const [loadingMessages, setLoadingMessages] = useState<boolean>(false);
 
-  const handleSendMessage = (): void => {
-    if (messageInput.trim()) {
+  const handleSendMessage = async (): Promise<void> => {
+    const content = messageInput.trim();
+    if (!content) return;
+
+    if (!user || !user.id) {
+      setConvError('You must be logged in to send messages');
+      return;
+    }
+
+    try {
+      // ensure a conversation exists
+      let convId = activeConversationId;
+      if (!convId) {
+        const createRes = await fetch(`${API_BASE}/conversations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ other_user_id: selectedConversation, user_id: user.id }),
+        });
+        if (!createRes.ok) throw new Error('failed to create conversation');
+        const createJson = await createRes.json();
+        convId = createJson.conversation_id;
+        setActiveConversationId(convId);
+      }
+
+      // send message
+      const sendRes = await fetch(`${API_BASE}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ conversation_id: convId, sender_id: user.id, content }),
+      });
+
+      if (!sendRes.ok) {
+        const body = await sendRes.text();
+        console.error('send message failed', sendRes.status, body);
+        setConvError('Failed to send message');
+        return;
+      }
+
+      const created = await sendRes.json();
       const newMessage: Message = {
-        id: messages.length + 1,
-        sender: 'user',
-        text: messageInput,
-        time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+        id: created.id,
+        sender: created.sender_id === user.id ? 'user' : 'other',
+        text: created.content,
+        time: new Date(created.sent_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
       };
-      setMessages([...messages, newMessage]);
+
+      setMessages(prev => [...prev, newMessage]);
       setMessageInput('');
+    } catch (e) {
+      console.error('Failed to send message', e);
+      setConvError('Failed to send message');
     }
   };
 
@@ -119,11 +95,104 @@ const MessagingPage: React.FC = () => {
     }
   };
 
+  const { user } = useUser();
+
   const filteredConversations = conversations.filter(conv =>
     conv.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const selectedConv = conversations.find(c => c.id === selectedConversation);
+
+  // default to /api so dev proxy and server endpoints (namespaced under /api) are used
+  const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? '/api';
+
+  React.useEffect(() => {
+    const load = async () => {
+      setLoadingConversations(true);
+      setConvError(null);
+      try {
+        const res = await fetch(`${API_BASE}/get_users`, { credentials: 'include' });
+        if (!res.ok) throw new Error(`status:${res.status}`);
+        const data = await res.json();
+        const serverUsers: any[] = Array.isArray(data) ? data : [];
+        const loggedId = (user && user.id) || null;
+        const listToMap = loggedId ? serverUsers.filter(u => u.id !== loggedId) : serverUsers;
+
+        const convs: Conversation[] = listToMap.map((u: any, idx: number) => ({
+          id: u.id ?? idx + 1,
+          name: u.name || u.username || `User ${u.id}`,
+          lastMessage: '',
+          time: '',
+          unread: 0,
+          avatar: (u.name || u.username || '').trim().split(/\s+/).slice(0,2).map((p:any)=>p[0]).join('').toUpperCase(),
+        }));
+
+        setConversations(convs);
+        setConvError(null);
+      } catch (e) {
+        console.error('Failed to load conversations', e);
+        setConvError('Failed to load users — ensure backend is running and dev proxy is configured');
+      } finally {
+        setLoadingConversations(false);
+      }
+    };
+
+    load();
+  }, [user]);
+
+  const handleSelectContact = async (contactId: number) => {
+    setSelectedConversation(contactId);
+    setMessages([]);
+    setActiveConversationId(null);
+
+    if (!user || !user.id) {
+      setConvError('Please log in to start a conversation');
+      return;
+    }
+
+    try {
+      const createRes = await fetch(`${API_BASE}/conversations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ other_user_id: contactId, user_id: user.id }),
+      });
+
+      if (!createRes.ok) {
+        const rbody = await createRes.text();
+        console.error('create conversation failed', createRes.status, rbody);
+        setConvError('Failed to create or find conversation');
+        return;
+      }
+
+      const { conversation_id } = await createRes.json();
+      setActiveConversationId(conversation_id);
+
+      setLoadingMessages(true);
+      const msgRes = await fetch(`${API_BASE}/conversations/${conversation_id}/messages`, { credentials: 'include' });
+      if (!msgRes.ok) {
+        console.error('failed to load messages', msgRes.status, await msgRes.text());
+        setConvError('Failed to load messages');
+        return;
+      }
+
+      const msgs = await msgRes.json();
+      const mapped: Message[] = (Array.isArray(msgs) ? msgs : []).sort((a:any,b:any)=> new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime()).map((m:any)=>({
+        id: m.id,
+        sender: m.sender_id === user.id ? 'user' : 'other',
+        text: m.content,
+        time: new Date(m.sent_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      }));
+
+      setMessages(mapped);
+      setConvError(null);
+    } catch (e) {
+      console.error('failed to open conversation', e);
+      setConvError('Failed to open conversation');
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8">
@@ -168,10 +237,16 @@ const MessagingPage: React.FC = () => {
 
             {/* Conversation List */}
             <div className="flex-1 overflow-y-auto">
+              {loadingConversations && (
+                <div className="p-6 text-center text-slate-400">Loading users...</div>
+              )}
+              {convError && !loadingMessages && (
+                <div className="p-6 text-center text-amber-400">{convError}</div>
+              )}
               {filteredConversations.map((conv) => (
                 <button
                   key={conv.id}
-                  onClick={() => setSelectedConversation(conv.id)}
+                  onClick={() => handleSelectContact(conv.id)}
                   className={`w-full p-5 flex items-center space-x-4 hover:bg-slate-700/30 transition-all duration-200 border-b border-slate-700/30 ${
                     selectedConversation === conv.id ? 'bg-slate-700/50' : ''
                   }`}
@@ -220,7 +295,21 @@ const MessagingPage: React.FC = () => {
             )}
 
             {/* Messages */}
+            {!selectedConv && (
+              <div className="flex-1 flex items-center justify-center text-slate-400">
+                <div className="text-center px-6 py-8">
+                  <h3 className="text-2xl font-bold mb-2">No conversation selected</h3>
+                  <p className="text-sm">Select a contact from the left to view messages.</p>
+                </div>
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {loadingMessages && (
+                <div className="text-center text-slate-400 w-full my-4">Loading messages…</div>
+              )}
+              {convError && selectedConv && (
+                <div className="text-center text-amber-400 w-full my-4">{convError}</div>
+              )}
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -255,7 +344,8 @@ const MessagingPage: React.FC = () => {
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Type your message..."
+                  placeholder={selectedConv ? 'Type your message...' : 'Select a contact to start a conversation'}
+                  disabled={!selectedConv}
                   className="flex-1 px-6 py-4 bg-slate-800/50 border border-slate-600/50 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium text-base"
                 />
                 <button className="p-3 hover:bg-slate-700/50 rounded-xl transition-colors flex-shrink-0">
@@ -263,6 +353,7 @@ const MessagingPage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleSendMessage}
+                  disabled={!selectedConv}
                   className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-2xl text-white font-bold transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-105 flex items-center space-x-2 flex-shrink-0"
                 >
                   <Send className="w-5 h-5" />

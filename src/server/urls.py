@@ -24,6 +24,11 @@ from backend.views import (
     add_listing_view,
     add_help_view,
     semantic_search,
+    get_user,
+    get_users,
+    get_or_create_conversation,
+    conversation_messages,
+    send_message,
 )
 
 urlpatterns = [
@@ -35,5 +40,13 @@ urlpatterns = [
     path("add_listing",add_listing_view,name="add_listing"),
     path("add_help_request",add_help_view,name="add_help_request"),
     path("search", semantic_search, name="semantic_search"),
+    path("api/get_user", get_user, name="get_user"),
+    path("api/get_users", get_users, name="get_users"),
+    path("api/conversations", get_or_create_conversation, name="get_or_create_conversation"),
+    path("api/conversations/<int:conv_id>/messages", conversation_messages, name="conversation_messages"),
+    path("api/messages", send_message, name="send_message"),
+    # add trailing slash variants for compatibility
+    path("api/conversations/", get_or_create_conversation, name="get_or_create_conversation_slash"),
+    path("api/messages/", send_message, name="send_message_slash"),
  
 ]

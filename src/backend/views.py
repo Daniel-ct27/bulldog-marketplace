@@ -3,7 +3,7 @@ from django.contrib.auth import login, authenticate, logout
 from .forms import RegistrationForm, MyLoginForm
 
 from django.http import JsonResponse
-from .models import Listing,Account,HelpRequest
+from .models import Listing,Account,HelpRequest,Conversation,Message
 from django.forms.models import model_to_dict
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -88,6 +88,22 @@ def listing_view(request):
         return Response([],status=500)
 
 
+
+@api_view(['GET'])
+def get_user(request):
+    """Return the currently authenticated user's basic info.
+
+    If no user is authenticated, returns an empty object.
+    """
+    try:
+        if hasattr(request, 'user') and getattr(request.user, 'is_authenticated', False):
+            data = model_to_dict(request.user, fields=['id', 'username', 'name', 'email'])
+            return Response(data, status=200)
+        return Response({}, status=200)
+    except Exception as e:
+        print('get_user error:', e)
+        return Response({}, status=500)
+
 @api_view(['GET'])
 def semantic_search(request):
     query = request.query_params.get("q", "").strip()
@@ -154,6 +170,7 @@ def add_listing_view(request):
         print(e)
         return Response([],status=400)
     
+
 @api_view(['POST'])
 def add_help_view(request):
     print(request.data)
@@ -165,3 +182,112 @@ def add_help_view(request):
     except Exception as e:
         print(e)
         return Response([],status=400)
+    
+
+@api_view(['GET'])
+def get_users(request):
+    try:
+        users = Account.objects.all()
+        # exclude the current user if request is authenticated
+        if hasattr(request, 'user') and getattr(request.user, 'is_authenticated', False):
+            users = users.exclude(id=request.user.id)
+
+        user_list = [{"id": user.id, "username": user.username, "email": user.email, "name": user.name} for user in users]
+        return Response(user_list, status=200)
+    except Exception as e:
+        print('get_users error:', e)
+        return Response([], status=500)
+
+
+@api_view(['POST'])
+def get_or_create_conversation(request):
+    """Get or create a conversation between two users.
+
+    Expected JSON: { "other_user_id": <int> }
+    Falls back to `user_id` in request body if not authenticated.
+    Returns { conversation_id: int, created: bool }
+    """
+    try:
+        other_id = request.data.get('other_user_id')
+        if other_id is None:
+            return Response({'error': 'other_user_id required'}, status=400)
+
+        if hasattr(request, 'user') and getattr(request.user, 'is_authenticated', False):
+            me_id = request.user.id
+        else:
+            me_id = request.data.get('user_id')
+
+        if me_id is None:
+            return Response({'error': 'user_id missing'}, status=400)
+
+        if int(me_id) == int(other_id):
+            return Response({'error': "cannot create conversation with yourself"}, status=400)
+
+        a, b = sorted([int(me_id), int(other_id)])
+        conv, created = Conversation.objects.get_or_create(user_one_id=a, user_two_id=b)
+        return Response({'conversation_id': conv.id, 'created': bool(created)}, status=200)
+    except Exception as e:
+        print('get_or_create_conversation error:', e)
+        return Response({'error': 'server error'}, status=500)
+
+
+@api_view(['GET'])
+def conversation_messages(request, conv_id: int):
+    """Return messages for a conversation ordered by sent_at (oldest first)."""
+    try:
+        qs = Message.objects.filter(conversation_id=conv_id).order_by('sent_at')
+        out = []
+        for m in qs:
+            out.append({
+                'id': m.id,
+                'sender_id': m.sender_id,
+                'content': m.content,
+                'sent_at': m.sent_at.isoformat(),
+            })
+        return Response(out, status=200)
+    except Exception as e:
+        print('conversation_messages error:', e)
+        return Response([], status=500)
+
+
+@api_view(['POST','OPTIONS'])
+def send_message(request):
+    """Create a message for a conversation and return it with sent_at."""
+    try:
+        # quick preflight handling
+        if request.method == 'OPTIONS':
+            return Response({}, status=204)
+
+        conv_id = request.data.get('conversation_id')
+        content = request.data.get('content', '')
+
+        if not conv_id or content is None:
+            return Response({'error': 'conversation_id and content required'}, status=400)
+
+        if hasattr(request, 'user') and getattr(request.user, 'is_authenticated', False):
+            sender_id = request.user.id
+        else:
+            sender_id = request.data.get('sender_id')
+
+        if not sender_id:
+            return Response({'error': 'sender_id required'}, status=400)
+
+        try:
+            conv = Conversation.objects.get(id=conv_id)
+            sender = Account.objects.get(id=sender_id)
+        except Conversation.DoesNotExist:
+            return Response({'error': 'conversation not found'}, status=404)
+        except Account.DoesNotExist:
+            return Response({'error': 'sender not found'}, status=404)
+
+        msg = Message.objects.create(conversation=conv, sender=sender, content=content)
+        return Response({
+            'id': msg.id,
+            'sender_id': msg.sender_id,
+            'content': msg.content,
+            'sent_at': msg.sent_at.isoformat(),
+        }, status=201)
+    except Exception as e:
+        print('send_message error:', e)
+        return Response({'error': 'server error'}, status=500)
+   
