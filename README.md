@@ -1,76 +1,83 @@
-Bulldog Marketplace
+# Bulldog Marketplace
 
-Bulldog Marketplace is a full-stack web application designed to support a campus-based marketplace where users can post, search, and discover items within a community. The project explores semantic search and modern web technologies to create a more intuitive buying and selling experience.
+Bulldog Marketplace is a full-stack web application designed to support a campus-based marketplace where users can post, browse, and search for items within a community. The project focuses on improving item discovery by incorporating semantic search rather than relying only on traditional keyword matching.
 
-Project Overview
+## Project Overview
 
-The goal of Bulldog Marketplace is to move beyond basic keyword search by incorporating semantic search techniques. Instead of matching exact words, the system focuses on understanding user intent and meaning, making it easier to find relevant listings.
+The goal of Bulldog Marketplace is to explore how semantic search techniques can enhance a simple marketplace application. By focusing on meaning and context, users are able to find more relevant listings even when exact keywords are not used.
 
-This project was built as a collaborative effort and emphasizes both backend intelligence and frontend usability.
+This project was built as a collaborative, learning-focused application with an emphasis on full-stack development and applied AI concepts.
 
-Features
+## Features
 
-User-friendly marketplace interface
+- Campus-based marketplace platform  
+- Item listings with structured data  
+- Semantic search for improved discovery  
+- Full-stack architecture with frontend and backend components  
+- Research-driven implementation of semantic search  
 
-Item listings with structured data
+## Tech Stack
 
-Semantic search for improved discovery
+### Frontend
+- TypeScript  
+- HTML  
+- CSS  
+- JavaScript  
 
-Full-stack architecture with separate client and backend logic
+### Backend
+- Python  
+- Embedding-based semantic search  
 
-Research-backed implementation of semantic search concepts
+## Repository Structure
 
-Tech Stack
-
-Frontend
-
-TypeScript
-
-HTML
-
-CSS
-
-JavaScript
-
-Backend
-
-Python
-
-Semantic search and embedding-based retrieval
-
-Repository Structure
+```text
 bulldog-marketplace/
 │
 ├── client/                  # Frontend application
 ├── src/                     # Backend source code
 ├── SEMANTIC_SEARCH_WRITEUP.md
 ├── .gitignore
+```
 
-Semantic Search
+# Bulldog Marketplace
 
-The semantic search approach used in this project is documented in detail in
-SEMANTIC_SEARCH_WRITEUP.md. It explains the motivation, design decisions, and overall approach behind using embeddings instead of traditional keyword-based search.
+## Semantic Search
+The semantic search approach used in this project is documented in detail in `SEMANTIC_SEARCH_WRITEUP.md`. This write-up explains the motivation behind using embeddings, the design decisions made, and how semantic retrieval improves search relevance compared to keyword-based methods.
 
-Getting Started
+---
 
-Clone the repository:
+## Getting Started
+The following steps describe how to run the project locally.
 
-git clone https://github.com/Daniel-ct27/bulldog-marketplace.git
+### Prerequisites
+* **Python 3.x**
+* **Node.js and npm**
+* **Git**
 
+### Installation
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/Daniel-ct27/bulldog-marketplace.git](https://github.com/Daniel-ct27/bulldog-marketplace.git)
+   ```
 
-Navigate into the project directory:
+2. **Navigate into the project directory:**
+   ```bash
+   cd bulldog-marketplace
+   ```
 
-cd bulldog-marketplace
-
-
-Follow setup instructions in the client and src folders as needed.
-
-Contributors
-
-Daniel Chukwudera
-
-Jermaine Adesanya
-
-Notes
-
-This project was built as a learning-focused application and reflects an exploration of full-stack development and applied semantic search concepts in a real-world use case.
+### Running the Application
+**Start the backend:**
+   ```bash
+   cd src
+   pip install -r requirements.txt
+   python main.py
+   ```
+**In a separate terminal, start the frontend:**
+   ```bash
+   cd client
+   npm install
+   npm run dev
+   ```
+### Contributors
+* Daniel Chukwudera
+* Jermaine Adesanya
